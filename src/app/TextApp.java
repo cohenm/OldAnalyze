@@ -4,8 +4,6 @@ import core.DefaultNormalizer;
 import core.TextAnalyzer;
 import core.WhitespaceTokenizer;
 import model.TextStats;
-
-
 import java.util.Scanner;
 
 public class TextApp {
@@ -26,6 +24,7 @@ public class TextApp {
             System.out.println("Słowa: " + stats.words());
             System.out.println("Znaki (ze spacjami): " + stats.charsWithSpaces());
             System.out.println("Znaki (bez spacji): " + stats.charsWithoutSpaces());
+            System.out.println("Zdania: " + stats.sentences());
         } catch (Exception e) {
             System.err.println("Błąd odczytu pliku: " + e.getMessage());
             System.exit(2);

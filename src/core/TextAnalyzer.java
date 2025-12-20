@@ -1,8 +1,6 @@
 package core;
 
 import model.TextStats;
-import io.FileUtil;
-
 import java.util.List;
 import java.util.Objects;
 
@@ -29,12 +27,27 @@ public class TextAnalyzer {
         String normalized = normalizer.normalize(original);
         List<String> words = tokenizer.words(normalized);
 
-        return new TextStats(charsWithSpaces, charsWithoutSpaces, words.size());
+        int sentences = countSentences(original);
+
+        return new TextStats(charsWithSpaces, charsWithoutSpaces, words.size(), sentences);
     }
 
     /** Analiza pliku (delegacja do FileUtil) */
     public TextStats analyzeFile(String path) throws java.io.IOException {
         String content = io.FileUtil.readFileToString(path);
         return analyze(content);
+    }
+
+    /** proste liczenie zdań po . !  */
+    private int countSentences(String text) {
+        if (text == null) return 0;
+        String trimmed = text.trim();
+        if (trimmed.isEmpty()) return 0;
+        String[] parts = trimmed.split("[.!?]+");
+        int count = 0;
+        for (String p : parts) {
+            if (!p.trim().isEmpty()) count++;
+        }
+        return count;
     }
 }
