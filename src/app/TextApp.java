@@ -1,6 +1,7 @@
 package app;
 
 import core.DefaultNormalizer;
+import core.DefaultSentenceTokenizer;
 import core.TextAnalyzer;
 import core.WhitespaceTokenizer;
 import model.TextStats;
@@ -10,13 +11,16 @@ public class TextApp {
     public static void main(String[] args) {
 
         Scanner input = new Scanner(System.in);
+        System.out.println("Podaj nazwę pliku:");
+        String ext = input.nextLine();
+        String path = ext + ".txt";
 
-        String sentence = input.nextLine();
-        String path = sentence + ".txt";
 
+        TextAnalyzer analyzer = new TextAnalyzer(
+                new DefaultNormalizer(),
+                new WhitespaceTokenizer(),
+                new DefaultSentenceTokenizer());
 
-
-        TextAnalyzer analyzer = new TextAnalyzer(new DefaultNormalizer(), new WhitespaceTokenizer());
 
         try {
             TextStats stats = analyzer.analyzeFile(path);

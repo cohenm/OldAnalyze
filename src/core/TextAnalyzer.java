@@ -9,45 +9,34 @@ import java.util.Objects;
 /// Encapsuluje całą logikę liczenia znaków i słów, używając dostarczonych strategii.
 
 public class TextAnalyzer {
+
     private final Normalizer normalizer;
     private final Tokenizer tokenizer;
+    private final SentenceTokenizer sentenceTokenizer;
 
-    public TextAnalyzer(Normalizer normalizer, Tokenizer tokenizer) {
-        this.normalizer = Objects.requireNonNull(normalizer);
-        this.tokenizer = Objects.requireNonNull(tokenizer);
+    public TextAnalyzer(Normalizer normalizer,
+                        Tokenizer tokenizer,
+                        SentenceTokenizer sentenceTokenizer) {
+        this.normalizer = Objects.requireNonNull(normalizer, "normalizer must not be null");
+        this.tokenizer = Objects.requireNonNull(tokenizer, "tokenizer must not be null");
+        this.sentenceTokenizer = Objects.requireNonNull(sentenceTokenizer, "sentenceTokenizer must not be null");
     }
 
-    /** Analiza tekstu (String) */
     public TextStats analyze(String text) {
         String original = Objects.requireNonNullElse(text, "");
+
         int charsWithSpaces = original.length();
         int charsWithoutSpaces = original.replaceAll("\\s+", "").length();
 
-        // Normalizacja + tokenizacja
         String normalized = normalizer.normalize(original);
         List<String> words = tokenizer.words(normalized);
+        List<String> sentences = sentenceTokenizer.sentences(original);
 
-        int sentences = countSentences(original);
-
-        return new TextStats(charsWithSpaces, charsWithoutSpaces, words.size(), sentences);
+        return new TextStats(charsWithSpaces, charsWithoutSpaces, words.size(), sentences.size());
     }
 
-    /** Analiza pliku (delegacja do FileUtil) */
     public TextStats analyzeFile(String path) throws java.io.IOException {
         String content = io.FileUtil.readFileToString(path);
         return analyze(content);
-    }
-
-    /** proste liczenie zdań po . !  */
-    private int countSentences(String text) {
-        if (text == null) return 0;
-        String trimmed = text.trim();
-        if (trimmed.isEmpty()) return 0;
-        String[] parts = trimmed.split("[.!?]+");
-        int count = 0;
-        for (String p : parts) {
-            if (!p.trim().isEmpty()) count++;
-        }
-        return count;
     }
 }
