@@ -2,97 +2,71 @@ package model;
 
 import java.util.ArrayList;
 import java.io.IOException;
+import java.util.Objects;
 
 import io.FileUtil;
 
-public class Methods {
 
-    static int countWords(String text) {
-        if (text == null) return 0;
-        String trimmed = text.trim();
-        if (trimmed.isEmpty()) return 0;
+public final class Methods {
 
-        // Ignorujemy interpunkcję (możesz wyłączyć, jeśli niepotrzebne)
-        trimmed = trimmed.replaceAll("[\\p{Punct}„”»«]", " ");
+    // Stałe regex – jedno źródło prawdy
+    private static final String PUNCT_REGEX = "[\\p{Punct}„”»«]";
+    private static final String WHITESPACE_REGEX = "\\s+";
 
-        // Rozbijamy po białych znakach
-        String[] parts = trimmed.split("\\s+");
+    //private Methods() { /* utility class */ }
 
-        // Przenosimy do ArrayList
-        ArrayList<String> words = new ArrayList<>(parts.length);
-        for (String p : parts) {
-            if (!p.isBlank()) {
-                words.add(p);
-            }
-        }
-        return words.size();
+    // --- PUBLIC API ---
+
+    /** Liczy słowa w tekście (po normalizacji: trim + usunięcie interpunkcji). */
+    public static int countWords(String text) {
+        final String t = normalize(text, true);
+        return t.isEmpty() ? 0 : t.split(WHITESPACE_REGEX).length;
     }
 
-    /**
-     * Liczy znaki wraz ze spacjami.
-     * Wykorzystuje String.length(), zwraca 0 dla null.
-     */
-    static int countCharsWithSpaces(String text) {
-        if (text == null) return 0;
-        return text.length();
+    /** Liczy znaki wraz ze spacjami i znakami nowej linii. */
+    public static int countCharsWithSpaces(String text) {
+        return Objects.requireNonNullElse(text, "").length();
     }
 
-    /**
-     * Liczy znaki bez białych znaków (spacje, taby, nowe linie itd.).
-     * Wykorzystuje regex \s+ do usunięcia białych znaków.
-     * Zwraca 0 dla null.
-     */
-    static int countCharsWithoutSpaces(String text) {
-        if (text == null) return 0;
-        String withoutWhiteSpace = text.replaceAll("\\s+", "");
-        return withoutWhiteSpace.length();
+    /** Liczy znaki bez białych znaków (spacje, taby, nowe linie). */
+    public static int countCharsWithoutSpaces(String text) {
+        final String t = Objects.requireNonNullElse(text, "");
+        return t.replaceAll(WHITESPACE_REGEX, "").length();
     }
 
-    // --- nowa funkcja: liczenie statystyk z pliku ---
-
-    /**
-     * Wczytuje plik i zwraca podstawowe statystyki:
-     * - słowa
-     * - znaki ze spacjami
-     * - znaki bez spacji
-     * <p>
-     * Używa FileUtil.readFileToString(...) (FileInputStream) zgodnie z Twoim podejściem.
-     */
+    /** Statystyki dla pliku (czytanie zgodnie z Twoim FileUtil – FileInputStream). */
     public static StatsResult statsFromFile(String path) throws IOException {
-        String content = FileUtil.readFileToString(path);
-        return statsFromText(content);
+        return statsFromText(FileUtil.readFileToString(path));
     }
+
+    /** Statystyki dla String. */
+    public static StatsResult statsFromText(String text) {
+        return new StatsResult(
+                countCharsWithSpaces(text),
+                countCharsWithoutSpaces(text),
+                countWords(text)
+        );
+    }
+
+    // --- PRIVATE HELPERS ---
 
     /**
-     * Liczy statystyki bezpośrednio dla podanego tekstu.
+     * Normalizacja tekstu: null → "", trim, opcjonalnie usunięcie interpunkcji (→ spacje).
+     * Pozostawia polskie litery; upraszcza liczenie słów.
      */
-
-    public static StatsResult statsFromText(String text) {
-        int words = countWords(text);
-        int charsWithSpaces = countCharsWithSpaces(text);
-        int charsWithoutSpaces = countCharsWithoutSpaces(text);
-        return new StatsResult(charsWithSpaces, charsWithoutSpaces, words);
+    private static String normalize(String text, boolean stripPunctuation) {
+        String t = Objects.requireNonNullElse(text, "").trim();
+        if (t.isEmpty()) return "";
+        return stripPunctuation ? t.replaceAll(PUNCT_REGEX, " ") : t;
     }
 
-    // Prosty obiekt-wynik
-    public static class StatsResult {
-        public final int charsWithSpaces;
-        public final int charsWithoutSpaces;
-        public final int words;
+    // --- LEKKI MODEL WYNIKU ---
 
-        public StatsResult(int charsWithSpaces, int charsWithoutSpaces, int words) {
-            this.charsWithSpaces = charsWithSpaces;
-            this.charsWithoutSpaces = charsWithoutSpaces;
-            this.words = words;
-        }
-
-        @Override
-        public String toString() {
-            return "StatsResult{" +
-                    "charsWithSpaces=" + charsWithSpaces +
-                    ", charsWithoutSpaces=" + charsWithoutSpaces +
-                    ", words=" + words +
-                    '}';
+    /** Lekki, niezmienny wynik. */
+    public record StatsResult(int charsWithSpaces, int charsWithoutSpaces, int words) {
+        @Override public String toString() {
+            return "StatsResult{charsWithSpaces=%d, charsWithoutSpaces=%d, words=%d}"
+                    .formatted(charsWithSpaces, charsWithoutSpaces, words);
         }
     }
 }
