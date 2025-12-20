@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+import java.util.Collections;
 
 public class Main {
 
@@ -5,10 +7,21 @@ public class Main {
         if (text == null) return 0;
         String trimmed = text.trim();
         if (trimmed.isEmpty()) return 0;
-        // Jeżeli chcesz ignorować interpunkcję, odkomentuj linię poniżej:
+
+        // Ignorujemy interpunkcję (możesz wyłączyć, jeśli niepotrzebne)
         trimmed = trimmed.replaceAll("[\\p{Punct}„”»«]", " ");
+
+        // Rozbijamy po białych znakach
         String[] parts = trimmed.split("\\s+");
-        return parts.length;
+
+        // Przenosimy do ArrayList
+        ArrayList<String> words = new ArrayList<>(parts.length);
+        for (String p : parts){
+            if(!p.isBlank()){
+                words.add(p);
+            }
+        }
+        return words.size();
     }
 
     /**
