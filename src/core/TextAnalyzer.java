@@ -3,6 +3,7 @@ package core;
 import model.TextStats;
 import model.WordCount;
 
+import java.io.IOException;
 import java.util.*; // Object, List, Map etc.
 import java.util.stream.Collectors;
 
@@ -86,7 +87,7 @@ public class TextAnalyzer {
     /** Wersje plikowe (delegują do readFileToString). */
     public Map<String, Integer> wordFrequencyFromFile(String path,
                                                       Set<String> stopWords,
-                                                      int minWordLength) throws java.io.IOException {
+                                                      int minWordLength) throws IOException {
         String content = io.FileUtil.readFileToString(path);
         return wordFrequencyFromText(content, stopWords, minWordLength);
     }
@@ -94,7 +95,7 @@ public class TextAnalyzer {
     public List<WordCount> topWordsFromFile(String path,
                                             int topN,
                                             Set<String> stopWords,
-                                            int minWordLength) throws java.io.IOException {
+                                            int minWordLength) throws IOException {
         String content = io.FileUtil.readFileToString(path);
         return topWordsFromText(content, topN, stopWords, minWordLength);
     }
