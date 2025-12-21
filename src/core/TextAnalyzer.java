@@ -2,11 +2,11 @@ package core;
 
 import model.TextStats;
 import model.WordCount;
+import model.WordSort;
 
 import java.io.IOException;
-import java.util.*; // Object, List, Map etc.
+import java.util.*; // Map, Set, List, Comparator, etc.
 import java.util.stream.Collectors;
-
 
 /// Klasa serwisowa TextAnalyzer
 ///
@@ -27,7 +27,7 @@ public class TextAnalyzer {
         this.sentenceTokenizer = Objects.requireNonNull(sentenceTokenizer, "sentenceTokenizer must not be null");
     }
 
-    // metoda analizująca
+    // analiza tekstu
     public TextStats analyze(String text) {
         String original = Objects.requireNonNullElse(text, "");
 
@@ -41,13 +41,13 @@ public class TextAnalyzer {
         return new TextStats(charsWithSpaces, charsWithoutSpaces, words.size(), sentences.size());
     }
 
-    // tekst statystyki
-    public TextStats analyzeFile(String path) throws java.io.IOException {
+    // analiza tekstu
+    public TextStats analyzeFile(String path) throws IOException {
         String content = io.FileUtil.readFileToString(path);
         return analyze(content);
     }
 
-    // ====== NOWE: częstotliwości słów ======
+    // ====== częstotliwości słów ======
 
     /** Pełna mapa częstotliwości (po normalizacji), z opcjonalnymi stop‑words i minimalną długością słowa. */
     public Map<String, Integer> wordFrequencyFromText(String text,
@@ -66,24 +66,6 @@ public class TextAnalyzer {
         return freq;
     }
 
-    /** Zwraca listę top N słów posortowaną po liczbie wystąpień malejąco, przy remisie alfabetycznie. */
-    public List<WordCount> topWordsFromText(String text,
-                                            int topN,
-                                            Set<String> stopWords,
-                                            int minWordLength) {
-        Map<String, Integer> freq = wordFrequencyFromText(text, stopWords, minWordLength);
-
-        Comparator<Map.Entry<String, Integer>> cmp =
-                Map.Entry.<String, Integer>comparingByValue().reversed()
-                        .thenComparing(Map.Entry::getKey);
-
-        return freq.entrySet().stream()
-                .sorted(cmp)
-                .limit(Math.max(1, topN))
-                .map(e -> new WordCount(e.getKey(), e.getValue()))
-                .collect(Collectors.toList());
-    }
-
     /** Wersje plikowe (delegują do readFileToString). */
     public Map<String, Integer> wordFrequencyFromFile(String path,
                                                       Set<String> stopWords,
@@ -92,11 +74,81 @@ public class TextAnalyzer {
         return wordFrequencyFromText(content, stopWords, minWordLength);
     }
 
+    /**
+     * do tego miejsca
+     */
+
+
+    /** Domyślnie: top N słów malejąco po liczbie wystąpień, przy remisie alfabetycznie. */
+    public List<WordCount> topWordsFromText(String text,
+                                            int topN,
+                                            Set<String> stopWords,
+                                            int minWordLength) {
+        return topWordsFromText(text, topN, stopWords, minWordLength, WordSort.FREQUENCY_DESC);
+    }
+
     public List<WordCount> topWordsFromFile(String path,
                                             int topN,
                                             Set<String> stopWords,
                                             int minWordLength) throws IOException {
         String content = io.FileUtil.readFileToString(path);
         return topWordsFromText(content, topN, stopWords, minWordLength);
+    }
+
+    // ====== NOWE: wersje ze strategią sortowania (ENUM) ======
+    /** Zwraca listę słów posortowaną zgodnie z WordSort; limit topN (min. 1). */
+    public List<WordCount> topWordsFromText(String text,
+                                            int topN,
+                                            Set<String> stopWords,
+                                            int minWordLength,
+                                            WordSort sortMode) {
+        Map<String, Integer> freq = wordFrequencyFromText(text, stopWords, minWordLength);
+
+        return freq.entrySet().stream()
+                .map(e -> new WordCount(e.getKey(), e.getValue()))
+                .sorted(sortMode.comparator())
+                .limit(Math.max(1, topN))
+                .collect(Collectors.toList());
+    }
+
+    /** Pełna lista posortowana wg WordSort (bez limitu). */
+    public List<WordCount> allWordsFromTextSorted(String text,
+                                                  Set<String> stopWords,
+                                                  int minWordLength,
+                                                  WordSort sortMode) {
+        Map<String, Integer> freq = wordFrequencyFromText(text, stopWords, minWordLength);
+
+        return freq.entrySet().stream()
+                .map(e -> new WordCount(e.getKey(), e.getValue()))
+                .sorted(sortMode.comparator())
+                .collect(Collectors.toList());
+    }
+
+    /** Wersja plikowa z WordSort. */
+    public List<WordCount> topWordsFromFile(String path,
+                                            int topN,
+                                            Set<String> stopWords,
+                                            int minWordLength,
+                                            WordSort sortMode) throws IOException {
+        String content = io.FileUtil.readFileToString(path);
+        return topWordsFromText(content, topN, stopWords, minWordLength, sortMode);
+    }
+
+    /** (Opcjonalnie) Zwraca posortowaną mapę częstotliwości jako LinkedHashMap (kolejność wg sortMode). */
+    public Map<String, Integer> wordFrequencySorted(String text,
+                                                    Set<String> stopWords,
+                                                    int minWordLength,
+                                                    WordSort sortMode) {
+        Map<String, Integer> freq = wordFrequencyFromText(text, stopWords, minWordLength);
+
+        return freq.entrySet().stream()
+                .map(e -> new WordCount(e.getKey(), e.getValue()))
+                .sorted(sortMode.comparator())
+                .collect(Collectors.toMap(
+                        WordCount::word,
+                        WordCount::count,
+                        (a, b) -> a,
+                        LinkedHashMap::new
+                ));
     }
 }
